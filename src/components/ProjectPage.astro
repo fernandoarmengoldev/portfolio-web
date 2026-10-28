@@ -1,0 +1,425 @@
+---
+import { Picture } from 'astro:assets';
+import { Icon } from 'astro-icon/components';
+import type { CollectionEntry } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Locale } from '../data/profile';
+import { getTranslations } from '../i18n/translations';
+import { getProjectPath } from '../utils/projects';
+import Header from './common/Header.astro';
+import Footer from './common/Footer.astro';
+
+interface Props {
+  locale: Locale;
+  project: CollectionEntry<'projects'>;
+  previous?: CollectionEntry<'projects'>;
+  next?: CollectionEntry<'projects'>;
+  esPath: string;
+  enPath: string;
+}
+
+const { locale, project, previous, next, esPath, enPath } = Astro.props;
+const t = getTranslations(locale);
+const homePath = getRelativeLocaleUrl(locale, '');
+const projectPath = (entry: CollectionEntry<'projects'>) => getProjectPath(locale, entry.data.slug);
+---
+
+<div id="top">
+  <Header locale={locale} esPath={esPath} enPath={enPath} />
+  <main id="main-content" class="project-main">
+    <article>
+      <header class="project-hero container-shell">
+        <div class="project-hero-copy" data-reveal>
+          <a class="back-link" href={`${homePath}#projects`}>
+            <Icon name="tabler:arrow-left" class="icon-inline" aria-hidden="true" />
+            {t.project.back}
+          </a>
+          <span class="placeholder-label">{t.project.placeholder}</span>
+          <h1>{project.data.title}</h1>
+          <p>{project.data.summary}</p>
+          <div class="project-meta">
+            <span><strong>{t.project.status}:</strong> {project.data.status}</span>
+            <span><strong>{t.project.year}:</strong> {project.data.year}</span>
+          </div>
+        </div>
+        <div class="project-hero-image card-surface" data-reveal>
+          <Picture
+            src={project.data.image}
+            formats={['avif', 'webp']}
+            fallbackFormat="webp"
+            widths={[720, 1080, 1440]}
+            sizes="(max-width: 767px) 94vw, 52vw"
+            alt={project.data.imageAlt}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+            class="detail-image"
+          />
+        </div>
+      </header>
+
+      <div class="project-content container-shell">
+        <section class="project-section project-overview" data-reveal>
+          <h2>{t.project.overview}</h2>
+          <p>{project.data.longDescription}</p>
+        </section>
+
+        <div class="problem-solution-grid">
+          <section class="project-section card-surface" data-reveal>
+            <Icon name="tabler:alert-triangle" class="section-icon" aria-hidden="true" />
+            <h2>{t.project.problem}</h2>
+            <ul>{project.data.challenges.map((item) => <li>{item}</li>)}</ul>
+          </section>
+          <section class="project-section card-surface solution-card" data-reveal>
+            <Icon name="tabler:bulb" class="section-icon" aria-hidden="true" />
+            <h2>{t.project.solution}</h2>
+            <ul>{project.data.solutions.map((item) => <li>{item}</li>)}</ul>
+          </section>
+        </div>
+
+        <section class="project-section decisions-section" data-reveal>
+          <h2>{t.project.decisions}</h2>
+          <ul class="decision-list">
+            {project.data.technicalDecisions.map((item) => <li>{item}</li>)}
+          </ul>
+        </section>
+
+        <section class="project-section technology-detail" data-reveal>
+          <h2>{t.project.technologies}</h2>
+          <ul>
+            {project.data.technologies.map((technology) => <li class="tag">{technology}</li>)}
+          </ul>
+        </section>
+
+        <section class="project-section gallery-section" data-reveal>
+          <h2>{t.project.gallery}</h2>
+          <div class="gallery-grid">
+            <Picture
+              src={project.data.image}
+              formats={['avif', 'webp']}
+              fallbackFormat="webp"
+              widths={[560, 900]}
+              sizes="(max-width: 767px) 94vw, 58vw"
+              alt={project.data.imageAlt}
+              loading="lazy"
+              decoding="async"
+              class="gallery-image"
+            />
+            <div class="gallery-todo glass">
+              <Icon name="tabler:photo-plus" aria-hidden="true" />
+              <span>{t.project.galleryTodo}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="project-section results-section" data-reveal>
+          <h2>{t.project.results}</h2>
+          <ul>{project.data.results.map((item) => <li>{item}</li>)}</ul>
+        </section>
+
+        {(project.data.githubUrl || project.data.demoUrl) && (
+          <div class="external-links" data-reveal>
+            {project.data.githubUrl && (
+              <a class="button button-primary" href={project.data.githubUrl} target="_blank" rel="noreferrer">
+                <Icon name="simple-icons:github" class="icon-inline" aria-hidden="true" />
+                {t.project.repository}
+              </a>
+            )}
+            {project.data.demoUrl && (
+              <a class="button button-secondary" href={project.data.demoUrl} target="_blank" rel="noreferrer">
+                <Icon name="tabler:external-link" class="icon-inline" aria-hidden="true" />
+                {t.project.demo}
+              </a>
+            )}
+          </div>
+        )}
+
+        <nav class="project-navigation" aria-label={locale === 'es' ? 'Navegación entre proyectos' : 'Project navigation'}>
+          {previous ? (
+            <a href={projectPath(previous)}>
+              <span>{t.project.previous}</span>
+              <strong>{previous.data.title}</strong>
+            </a>
+          ) : <span></span>}
+          {next ? (
+            <a href={projectPath(next)}>
+              <span>{t.project.next}</span>
+              <strong>{next.data.title}</strong>
+            </a>
+          ) : <span></span>}
+        </nav>
+      </div>
+    </article>
+  </main>
+  <Footer locale={locale} esPath={esPath} enPath={enPath} />
+</div>
+
+<style>
+  .project-main {
+    padding-top: 7rem;
+  }
+
+  .project-hero {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 6vw, 5rem);
+    min-height: calc(100dvh - 7rem);
+    padding-block: 2.5rem 5rem;
+  }
+
+  .project-hero-copy {
+    display: grid;
+    justify-items: start;
+  }
+
+  .back-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+  }
+
+  .back-link:hover {
+    color: var(--accent-strong);
+  }
+
+  .project-hero h1 {
+    max-width: 13ch;
+    margin: 1rem 0 0;
+    font-size: clamp(2.7rem, 7vw, 5.6rem);
+    font-weight: 670;
+    letter-spacing: -0.065em;
+    line-height: 0.94;
+  }
+
+  .project-hero-copy > p {
+    max-width: 46ch;
+    margin: 1.4rem 0 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+
+  .project-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1.4rem;
+    margin-top: 1.25rem;
+    color: var(--text-faint);
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+  }
+
+  .project-hero-image {
+    overflow: hidden;
+  }
+
+  :global(.detail-image),
+  :global(.gallery-image) {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .project-content {
+    padding-bottom: var(--section-space);
+  }
+
+  .project-section {
+    padding-block: clamp(3.5rem, 8vw, 7rem);
+  }
+
+  .project-section h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 3.2rem);
+    letter-spacing: -0.05em;
+    line-height: 1;
+  }
+
+  .project-overview {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .project-overview p {
+    max-width: 60ch;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+  }
+
+  .problem-solution-grid {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: var(--section-space);
+  }
+
+  .problem-solution-grid .project-section {
+    min-height: 22rem;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .solution-card {
+    background:
+      linear-gradient(135deg, rgba(99, 216, 232, 0.1), transparent 50%),
+      var(--surface-strong);
+  }
+
+  .section-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-bottom: 3.5rem;
+    color: var(--accent-strong);
+  }
+
+  .project-section ul {
+    margin: 1.5rem 0 0;
+    padding-left: 1.15rem;
+    color: var(--text-muted);
+  }
+
+  .project-section li::marker {
+    color: var(--accent);
+  }
+
+  .decisions-section {
+    max-width: 56rem;
+    margin-inline: auto;
+  }
+
+  .decision-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .technology-detail ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery-section {
+    padding-top: 0;
+  }
+
+  .gallery-grid {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 2rem;
+  }
+
+  .gallery-grid :global(picture) {
+    overflow: hidden;
+    border-radius: var(--radius-card);
+  }
+
+  .gallery-todo {
+    display: grid;
+    min-height: 14rem;
+    place-content: center;
+    justify-items: center;
+    gap: 0.8rem;
+    border-radius: var(--radius-card);
+    color: var(--text-muted);
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .gallery-todo :global(svg) {
+    width: 1.8rem;
+    height: 1.8rem;
+    color: var(--accent-strong);
+  }
+
+  .external-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .project-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    border-top: 1px solid var(--border);
+    margin-top: var(--section-space);
+    padding-top: 1rem;
+  }
+
+  .project-navigation a {
+    display: grid;
+    gap: 0.25rem;
+    border-radius: var(--radius-card);
+    padding: 1rem;
+    transition: background-color 180ms ease;
+  }
+
+  .project-navigation a:last-child {
+    justify-items: end;
+    text-align: right;
+  }
+
+  .project-navigation a:hover {
+    background: rgba(99, 216, 232, 0.06);
+  }
+
+  .project-navigation a span {
+    color: var(--text-faint);
+    font-size: 0.75rem;
+  }
+
+  .project-navigation a strong {
+    color: var(--accent-strong);
+  }
+
+  @media (min-width: 768px) {
+    .project-hero {
+      grid-template-columns: minmax(0, 0.8fr) minmax(28rem, 1.2fr);
+    }
+
+    .project-overview {
+      grid-template-columns: minmax(12rem, 0.45fr) minmax(0, 1fr);
+    }
+
+    .problem-solution-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .gallery-grid {
+      grid-template-columns: minmax(0, 1.5fr) minmax(16rem, 0.5fr);
+    }
+
+    .gallery-todo {
+      min-height: 100%;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .project-hero {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+
+    .project-hero-copy {
+      order: 1;
+    }
+
+    .project-hero-image {
+      order: 2;
+    }
+
+    .project-navigation {
+      grid-template-columns: 1fr;
+    }
+
+    .project-navigation a:last-child {
+      justify-items: start;
+      text-align: left;
+    }
+  }
+</style>

@@ -1,0 +1,93 @@
+---
+import { Icon } from 'astro-icon/components';
+import type { Locale } from '../../data/profile';
+import { profile } from '../../data/profile';
+import { getTranslations } from '../../i18n/translations';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+  locale: Locale;
+  esPath: string;
+  enPath: string;
+}
+
+const { locale, esPath, enPath } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<footer>
+  <div class="container-shell footer-grid">
+    <div>
+      <p class="footer-name">{profile.name}</p>
+      <p class="footer-built">{t.footer.built}</p>
+    </div>
+    <nav aria-label={locale === 'es' ? 'Enlaces del pie de página' : 'Footer links'}>
+      <a href={profile.githubUrl} target="_blank" rel="noreferrer">
+        <Icon name="simple-icons:github" class="icon-inline" aria-hidden="true" />
+        GitHub
+      </a>
+      <a href={`mailto:${profile.email}`}>
+        <Icon name="tabler:mail" class="icon-inline" aria-hidden="true" />
+        {locale === 'es' ? 'Correo' : 'Email'}
+      </a>
+      <a href="#top">
+        <Icon name="tabler:arrow-up" class="icon-inline" aria-hidden="true" />
+        {t.footer.top}
+      </a>
+    </nav>
+    <LanguageSwitcher locale={locale} esPath={esPath} enPath={enPath} label={t.languageLabel} />
+  </div>
+</footer>
+
+<style>
+  footer {
+    padding: 2.5rem 0 1.5rem;
+  }
+
+  .footer-grid {
+    display: grid;
+    align-items: start;
+    gap: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  .footer-name {
+    color: var(--text);
+    font-weight: 720;
+  }
+
+  .footer-built {
+    margin-top: 0.25rem;
+    color: var(--text-faint);
+    font-size: 0.82rem;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.1rem;
+  }
+
+  nav a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+  }
+
+  nav a:hover {
+    color: var(--accent-strong);
+  }
+
+  @media (min-width: 800px) {
+    .footer-grid {
+      grid-template-columns: 1fr auto auto;
+    }
+  }
+</style>

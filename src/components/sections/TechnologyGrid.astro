@@ -1,0 +1,117 @@
+---
+import { Icon } from 'astro-icon/components';
+import type { Locale } from '../../data/profile';
+import { technologyCategories } from '../../data/technologies';
+import { getTranslations } from '../../i18n/translations';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<div class="technology-layout">
+  {technologyCategories.map((category, index) => (
+    <article class:list={['technology-group', `group-${index + 1}`]} data-reveal>
+      <h3>{t.technologies.categories[category.key]}</h3>
+      <ul>
+        {category.items.map((technology) => (
+          <li class:list={{ highlighted: technology.highlighted }}>
+            <Icon name={technology.icon} class="technology-icon" aria-hidden="true" />
+            <span>{technology.name}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  ))}
+</div>
+
+<style>
+  .technology-layout {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .technology-group {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: rgba(12, 20, 29, 0.72);
+    padding: clamp(1.1rem, 2vw, 1.5rem);
+  }
+
+  .technology-group:nth-child(2),
+  .technology-group:nth-child(5) {
+    background:
+      linear-gradient(135deg, rgba(99, 216, 232, 0.09), transparent 58%),
+      rgba(12, 20, 29, 0.85);
+  }
+
+  h3 {
+    margin: 0 0 1rem;
+    color: var(--text-muted);
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-small);
+    background: rgba(255, 255, 255, 0.035);
+    color: var(--text-muted);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 640;
+  }
+
+  li.highlighted {
+    border-color: var(--border-strong);
+    background: rgba(99, 216, 232, 0.08);
+    color: var(--text);
+  }
+
+  .technology-icon {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    color: var(--accent-strong);
+  }
+
+  @media (min-width: 700px) {
+    .technology-layout {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .technology-group {
+      grid-column: span 3;
+    }
+
+    .group-1 {
+      grid-column: span 4;
+    }
+
+    .group-2 {
+      grid-column: span 2;
+    }
+
+    .group-5 {
+      grid-column: span 6;
+    }
+  }
+</style>

@@ -1,0 +1,172 @@
+---
+import { Icon } from 'astro-icon/components';
+import type { Locale } from '../../data/profile';
+import { experience } from '../../data/experience';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+---
+
+<ol class="timeline">
+  {experience.map((item) => (
+    <li class="timeline-item" data-reveal>
+      <div class="timeline-marker" aria-hidden="true">
+        <Icon name="tabler:code" />
+      </div>
+      <article>
+        <header>
+          <div>
+            <h3>{item.role[locale]}</h3>
+            <p class="company">{item.company}</p>
+          </div>
+          <div class="meta">
+            <span>{item.period[locale]}</span>
+            <span>{item.location[locale]}</span>
+          </div>
+        </header>
+        <ul class="responsibilities">
+          {item.responsibilities[locale].map((responsibility) => <li>{responsibility}</li>)}
+        </ul>
+        <ul class="technology-list" aria-label={locale === 'es' ? 'Tecnologías relacionadas' : 'Related technologies'}>
+          {item.technologies.map((technology) => <li class="tag">{technology}</li>)}
+        </ul>
+      </article>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .timeline {
+    position: relative;
+    max-width: 68rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .timeline::before {
+    position: absolute;
+    top: 1.5rem;
+    bottom: 1.5rem;
+    left: 1.35rem;
+    width: 1px;
+    background: linear-gradient(var(--accent), var(--border) 72%, transparent);
+    content: "";
+  }
+
+  .timeline-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .timeline-item + .timeline-item {
+    margin-top: 1.25rem;
+  }
+
+  .timeline-marker {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-small);
+    background: var(--bg);
+    color: var(--accent-strong);
+  }
+
+  .timeline-marker :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  article {
+    border-top: 1px solid var(--border);
+    padding: 0.15rem 0 2.25rem;
+  }
+
+  header {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h3 {
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    letter-spacing: -0.035em;
+  }
+
+  .company {
+    margin-top: 0.15rem;
+    color: var(--accent-strong);
+    font-weight: 700;
+  }
+
+  .meta {
+    display: grid;
+    color: var(--text-faint);
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+  }
+
+  .responsibilities {
+    display: grid;
+    max-width: 62ch;
+    gap: 0.5rem;
+    margin: 1.1rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--text-muted);
+  }
+
+  .responsibilities li::marker {
+    color: var(--accent);
+  }
+
+  .technology-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 1.15rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 720px) {
+    .timeline-item {
+      grid-template-columns: 3.5rem minmax(0, 1fr);
+      gap: 1.5rem;
+    }
+
+    .timeline::before {
+      left: 1.7rem;
+    }
+
+    .timeline-marker {
+      width: 3.5rem;
+      height: 3.5rem;
+    }
+
+    article {
+      padding-top: 0.35rem;
+    }
+
+    header {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .meta {
+      justify-items: end;
+      text-align: right;
+    }
+  }
+</style>

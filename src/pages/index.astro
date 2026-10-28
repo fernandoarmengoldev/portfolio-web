@@ -1,0 +1,18 @@
+---
+const destination = '/es/';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="refresh" content={`0;url=${destination}`} />
+    <link rel="canonical" href={new URL(destination, Astro.site)} />
+    <title>Fernando D. Armengol Gonzalez</title>
+  </head>
+  <body>
+    <h1>Portfolio de Fernando D. Armengol Gonzalez</h1>
+    <p>Redirigiendo a <a href={destination}>la versión en español</a>.</p>
+  </body>
+</html>

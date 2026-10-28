@@ -1,0 +1,15 @@
+---
+import { getCollection } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HomePage from '../../components/HomePage.astro';
+
+const locale = 'es';
+const projects = await getCollection('projects', ({ data }) => data.locale === locale && data.featured);
+const esPath = getRelativeLocaleUrl('es', '');
+const enPath = getRelativeLocaleUrl('en', '');
+---
+
+<BaseLayout locale={locale} canonicalPath={esPath} esPath={esPath} enPath={enPath}>
+  <HomePage locale={locale} projects={projects} esPath={esPath} enPath={enPath} />
+</BaseLayout>

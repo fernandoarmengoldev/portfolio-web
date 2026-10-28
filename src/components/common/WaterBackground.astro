@@ -1,0 +1,309 @@
+<div class="water-background" aria-hidden="true">
+  <canvas data-water-canvas></canvas>
+</div>
+
+<style>
+  .water-background {
+    position: fixed;
+    z-index: 0;
+    inset: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 72% 18%, rgba(38, 122, 145, 0.2), transparent 38rem),
+      linear-gradient(180deg, #06121a, #040a0f 62%, #071118);
+    pointer-events: none;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 700ms ease;
+  }
+
+  canvas[data-water-ready="true"] {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    canvas {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-water-canvas]');
+
+  if (canvas && canvas.dataset.waterInitialized !== 'true') {
+    canvas.dataset.waterInitialized = 'true';
+
+    const gl = canvas.getContext('webgl', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false,
+    });
+
+    if (gl) {
+      const vertexSource = `
+        attribute vec2 aPosition;
+        varying vec2 vUv;
+
+        void main() {
+          vUv = aPosition * 0.5 + 0.5;
+          gl_Position = vec4(aPosition, 0.0, 1.0);
+        }
+      `;
+
+      const fragmentSource = `
+        precision highp float;
+
+        varying vec2 vUv;
+        uniform vec2 uResolution;
+        uniform float uTime;
+        uniform vec3 uRipples[12];
+
+        vec3 directionalWave(vec2 point, vec2 direction, float frequency, float speed, float amplitude) {
+          float phase = dot(point, direction) * frequency + uTime * speed;
+          float waveHeight = sin(phase) * amplitude;
+          vec2 slope = cos(phase) * direction * frequency * amplitude;
+          return vec3(waveHeight, slope);
+        }
+
+        vec3 waterField(vec2 point) {
+          vec3 field = vec3(0.0);
+          field += directionalWave(point, normalize(vec2(1.0, 0.22)), 2.35, 0.54, 0.060);
+          field += directionalWave(point, normalize(vec2(-0.38, 1.0)), 3.70, -0.72, 0.036);
+          field += directionalWave(point, normalize(vec2(0.72, 1.0)), 6.15, 1.08, 0.017);
+          field += directionalWave(point, normalize(vec2(-1.0, 0.48)), 9.40, -1.38, 0.009);
+          field += directionalWave(point, normalize(vec2(0.55, -1.0)), 14.5, 1.82, 0.004);
+
+          float aspect = uResolution.x / max(uResolution.y, 1.0);
+
+          for (int index = 0; index < 12; index++) {
+            vec3 ripple = uRipples[index];
+            float rippleAge = uTime - ripple.z;
+            float rippleAlive = step(0.0, rippleAge) * (1.0 - step(4.2, rippleAge));
+            vec2 rippleCenter = (ripple.xy - 0.5) * vec2(aspect, 1.0) * 2.45;
+            vec2 rippleDelta = point - rippleCenter;
+            float rippleDistance = max(length(rippleDelta), 0.0001);
+            float rippleRadius = rippleAge * 0.38;
+            float ringDistance = rippleDistance - rippleRadius;
+            float rippleEnvelope = exp(-abs(ringDistance) * 8.5) * exp(-rippleAge * 0.62) * rippleAlive;
+            float ripplePhase = ringDistance * 30.0;
+            float rippleAmplitude = 0.032 * rippleEnvelope;
+            field.x += sin(ripplePhase) * rippleAmplitude;
+            field.yz += cos(ripplePhase) * 30.0 * rippleAmplitude * rippleDelta / rippleDistance;
+          }
+
+          return field;
+        }
+
+        float softCaustic(vec2 point, vec2 slope) {
+          vec2 warped = point * 3.1 + slope * 0.32;
+          float bandsA = sin(warped.x * 2.0 + sin(warped.y * 1.35 - uTime * 0.42));
+          float bandsB = sin(warped.y * 2.35 - sin(warped.x * 1.15 + uTime * 0.36));
+          return pow(max(0.0, bandsA * bandsB), 4.0);
+        }
+
+        void main() {
+          float aspect = uResolution.x / max(uResolution.y, 1.0);
+          vec2 centered = (vUv - 0.5) * vec2(aspect, 1.0);
+          vec2 waterPoint = centered * 2.45;
+          vec3 field = waterField(waterPoint);
+
+          vec3 normal = normalize(vec3(-field.y * 0.86, -field.z * 0.86, 1.0));
+          vec3 lightDirection = normalize(vec3(-0.42, 0.64, 0.72));
+          vec3 viewDirection = normalize(vec3(centered * 0.14, 1.0));
+          vec3 halfVector = normalize(lightDirection + viewDirection);
+
+          float diffuse = max(dot(normal, lightDirection), 0.0);
+          float sharpReflection = pow(max(dot(normal, halfVector), 0.0), 92.0);
+          float softReflection = pow(max(dot(normal, halfVector), 0.0), 18.0);
+          float fresnel = pow(1.0 - max(dot(normal, viewDirection), 0.0), 3.0);
+          float caustic = softCaustic(waterPoint, field.yz);
+
+          vec3 deepWater = vec3(0.012, 0.031, 0.047);
+          vec3 upperWater = vec3(0.025, 0.110, 0.145);
+          vec3 cyanLight = vec3(0.31, 0.78, 0.86);
+          vec3 skyReflection = vec3(0.19, 0.43, 0.50);
+
+          float verticalDepth = smoothstep(-0.62, 0.72, centered.y + field.x * 1.6);
+          float lightPool = exp(-length((vUv - vec2(0.73, 0.78)) * vec2(1.0, 1.35)) * 2.45);
+          vec3 color = mix(deepWater, upperWater, verticalDepth * 0.72 + lightPool * 0.22);
+          color += cyanLight * diffuse * 0.075;
+          color += skyReflection * fresnel * 0.36;
+          color += cyanLight * sharpReflection * 0.72;
+          color += skyReflection * softReflection * 0.12;
+          color += cyanLight * caustic * 0.022;
+          color += cyanLight * abs(field.x) * 0.13;
+
+          float vignette = 1.0 - smoothstep(0.34, 1.05, length(centered / vec2(max(aspect, 1.0), 1.0)));
+          color *= mix(0.68, 1.0, vignette);
+          color = pow(color, vec3(0.93));
+
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `;
+
+      const compileShader = (type: number, source: string) => {
+        const shader = gl.createShader(type);
+        if (!shader) return null;
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          gl.deleteShader(shader);
+          return null;
+        }
+        return shader;
+      };
+
+      const vertexShader = compileShader(gl.VERTEX_SHADER, vertexSource);
+      const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentSource);
+      const program = vertexShader && fragmentShader ? gl.createProgram() : null;
+
+      if (program && vertexShader && fragmentShader) {
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
+          gl.useProgram(program);
+
+          const buffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+          const positionLocation = gl.getAttribLocation(program, 'aPosition');
+          gl.enableVertexAttribArray(positionLocation);
+          gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+          const resolutionLocation = gl.getUniformLocation(program, 'uResolution');
+          const timeLocation = gl.getUniformLocation(program, 'uTime');
+          const ripplesLocation = gl.getUniformLocation(program, 'uRipples[0]');
+
+          const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+          const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+          const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+          const lowPowerDevice = (navigator.hardwareConcurrency ?? 4) <= 4;
+          const qualityScale = connection?.saveData ? 0.58 : coarsePointer ? 0.72 : lowPowerDevice ? 0.68 : 1;
+          const maxPixelRatio = coarsePointer ? 1 : 1.15;
+          const maxPixelCount = coarsePointer ? 900_000 : 1_600_000;
+          const targetFrameTime = coarsePointer || connection?.saveData ? 1000 / 30 : 0;
+          const startTime = performance.now();
+          const ripples = new Float32Array(36);
+          let adaptiveQualityScale = qualityScale;
+          let performanceWindowStartedAt = startTime;
+          let performanceFrameCount = 0;
+          let rippleIndex = 0;
+          let lastFrameAt = -10000;
+          let frameRequest = 0;
+          let running = false;
+
+          for (let index = 0; index < 12; index++) {
+            ripples[index * 3 + 2] = -100;
+          }
+
+          const resize = () => {
+            const viewportPixels = Math.max(window.innerWidth * window.innerHeight, 1);
+            const pixelBudgetScale = Math.sqrt(maxPixelCount / viewportPixels);
+            const pixelRatio = Math.min(window.devicePixelRatio || 1, maxPixelRatio, pixelBudgetScale) * adaptiveQualityScale;
+            const width = Math.max(1, Math.floor(window.innerWidth * pixelRatio));
+            const height = Math.max(1, Math.floor(window.innerHeight * pixelRatio));
+            if (canvas.width !== width || canvas.height !== height) {
+              canvas.width = width;
+              canvas.height = height;
+              gl.viewport(0, 0, width, height);
+            }
+          };
+
+          const createRipple = (event: PointerEvent) => {
+            const offset = rippleIndex * 3;
+            ripples[offset] = event.clientX / Math.max(window.innerWidth, 1);
+            ripples[offset + 1] = 1 - event.clientY / Math.max(window.innerHeight, 1);
+            ripples[offset + 2] = (performance.now() - startTime) * 0.001;
+            rippleIndex = (rippleIndex + 1) % 12;
+          };
+
+          const draw = (now: number) => {
+            if (!running) return;
+            frameRequest = requestAnimationFrame(draw);
+            if (targetFrameTime > 0 && now - lastFrameAt < targetFrameTime - 1) return;
+            lastFrameAt = now;
+
+            const elapsed = (now - startTime) * 0.001;
+            gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+            gl.uniform1f(timeLocation, reducedMotion.matches ? 4.0 : elapsed);
+            gl.uniform3fv(ripplesLocation, ripples);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            canvas.dataset.waterReady = 'true';
+
+            if (targetFrameTime === 0) {
+              performanceFrameCount += 1;
+              const performanceWindowDuration = now - performanceWindowStartedAt;
+              if (performanceWindowDuration >= 1200) {
+                const measuredFps = performanceFrameCount * 1000 / performanceWindowDuration;
+                if (measuredFps < 48 && adaptiveQualityScale > 0.5) {
+                  adaptiveQualityScale = Math.max(0.5, adaptiveQualityScale * (measuredFps < 36 ? 0.72 : 0.84));
+                  resize();
+                }
+                performanceFrameCount = 0;
+                performanceWindowStartedAt = now;
+              }
+            }
+
+            if (reducedMotion.matches) stop();
+          };
+
+          const start = () => {
+            if (running || document.hidden) return;
+            lastFrameAt = performance.now();
+            performanceWindowStartedAt = lastFrameAt;
+            performanceFrameCount = 0;
+            running = true;
+            frameRequest = requestAnimationFrame(draw);
+          };
+
+          const stop = () => {
+            running = false;
+            cancelAnimationFrame(frameRequest);
+          };
+
+          const handleVisibility = () => {
+            if (document.hidden) stop();
+            else start();
+          };
+
+          resize();
+          const resizeObserver = new ResizeObserver(resize);
+          resizeObserver.observe(document.documentElement);
+          document.addEventListener('visibilitychange', handleVisibility);
+          reducedMotion.addEventListener('change', () => {
+            lastFrameAt = -10000;
+            start();
+          });
+
+          if (!reducedMotion.matches) {
+            window.addEventListener('pointerdown', createRipple, { passive: true });
+          }
+
+          window.addEventListener('pagehide', () => {
+            stop();
+            resizeObserver.disconnect();
+          }, { once: true });
+
+          window.addEventListener('pageshow', () => {
+            resizeObserver.observe(document.documentElement);
+            resize();
+            start();
+          });
+
+          start();
+        }
+      }
+    }
+  }
+</script>

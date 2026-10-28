@@ -1,0 +1,51 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectPage from '../../../components/ProjectPage.astro';
+import { getProjectPageData, getProjectPath, getProjectStaticPaths } from '../../../utils/projects';
+
+export async function getStaticPaths() {
+  return getProjectStaticPaths('en');
+}
+
+const locale = 'en';
+const { project } = Astro.props as { project: CollectionEntry<'projects'> };
+const { previous, next, translated } = await getProjectPageData(project, locale);
+const enPath = getProjectPath('en', project.data.slug);
+const esPath = translated ? getProjectPath('es', translated.data.slug) : '/es/';
+const title = `${project.data.title} | Fernando D. Armengol Gonzalez`;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: project.data.title,
+  description: project.data.summary,
+  inLanguage: 'en',
+  url: new URL(enPath, Astro.site).href,
+  image: new URL(project.data.image.src, Astro.site).href,
+  author: {
+    '@type': 'Person',
+    name: 'Fernando D. Armengol Gonzalez',
+  },
+};
+---
+
+<BaseLayout
+  locale={locale}
+  title={title}
+  description={project.data.summary}
+  canonicalPath={enPath}
+  esPath={esPath}
+  enPath={enPath}
+  ogImage={project.data.image}
+  ogType="article"
+  jsonLd={jsonLd}
+>
+  <ProjectPage
+    locale={locale}
+    project={project}
+    previous={previous}
+    next={next}
+    esPath={esPath}
+    enPath={enPath}
+  />
+</BaseLayout>

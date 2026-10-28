@@ -1,0 +1,565 @@
+---
+import { Icon } from 'astro-icon/components';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { CollectionEntry } from 'astro:content';
+import type { Locale } from '../data/profile';
+import { profile } from '../data/profile';
+import { education } from '../data/education';
+import { siteFeatures } from '../data/features';
+import { getTranslations } from '../i18n/translations';
+import Header from './common/Header.astro';
+import Footer from './common/Footer.astro';
+import Hero from './sections/Hero.astro';
+import ProjectCard from './cards/ProjectCard.astro';
+import ExperienceTimeline from './sections/ExperienceTimeline.astro';
+import TechnologyGrid from './sections/TechnologyGrid.astro';
+
+interface Props {
+  locale: Locale;
+  projects: CollectionEntry<'projects'>[];
+  esPath: string;
+  enPath: string;
+}
+
+const { locale, projects, esPath, enPath } = Astro.props;
+const t = getTranslations(locale);
+const sortedProjects = projects.toSorted((a, b) => a.data.order - b.data.order);
+const projectBase = locale === 'es' ? 'proyectos' : 'projects';
+const detailPath = (slug: string) => getRelativeLocaleUrl(locale, `${projectBase}/${slug}`);
+const areaIcons = ['tabler:world-code', 'tabler:brand-android', 'tabler:shield-lock'] as const;
+---
+
+<div id="top">
+  <Header locale={locale} esPath={esPath} enPath={enPath} isHome />
+  <main id="main-content">
+    <Hero locale={locale} />
+
+    <section id="experience" class="section experience-section">
+      <div class="container-shell">
+        <div class="section-heading" data-reveal>
+          <h2>{t.experience.title}</h2>
+          <p>{t.experience.body}</p>
+        </div>
+        <ExperienceTimeline locale={locale} />
+      </div>
+    </section>
+
+    {false && (
+      <section id="about" class="section about-section">
+      <div class="container-shell">
+        <div class="section-heading" data-reveal>
+          <h2>{t.about.title}</h2>
+          <p>{t.about.body}</p>
+        </div>
+        <div class="about-grid">
+          {t.about.areas.map((area, index) => (
+            <article class:list={['about-area card-surface', `area-${index + 1}`]} data-reveal>
+              <Icon name={areaIcons[index]} class="area-icon" aria-hidden="true" />
+              <div>
+                <h3>{area.title}</h3>
+                <p>{area.text}</p>
+              </div>
+            </article>
+          ))}
+          <aside class="profile-facts glass" data-reveal>
+            <div>
+              <Icon name="tabler:map-pin" aria-hidden="true" />
+              <span>{locale === 'es' ? profile.location : 'Alicante, Spain'}</span>
+            </div>
+            <div>
+              <Icon name="tabler:briefcase" aria-hidden="true" />
+              <span>{profile.availability[locale]}</span>
+            </div>
+            <div>
+              <Icon name="tabler:language" aria-hidden="true" />
+              <span><strong>{t.about.languagesLabel}:</strong> {t.about.languages}</span>
+            </div>
+          </aside>
+        </div>
+      </div>
+      </section>
+    )}
+
+    {siteFeatures.projects && (
+      <section id="projects" class="section projects-section">
+        <div class="container-shell">
+          <div class="section-heading" data-reveal>
+            <h2>{t.projects.title}</h2>
+            <p>{t.projects.body}</p>
+          </div>
+          <div class="projects-grid">
+            {sortedProjects.map((project, index) => (
+              <ProjectCard
+                project={project}
+                locale={locale}
+                detailPath={detailPath(project.data.slug)}
+                featured={index === 0}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <section id="technologies" class="section technology-section">
+      <div class="container-shell">
+        <div class="section-heading" data-reveal>
+          <h2>{t.technologies.title}</h2>
+          <p>{t.technologies.body}</p>
+        </div>
+        <TechnologyGrid locale={locale} />
+      </div>
+    </section>
+
+    <section id="education" class="section education-section">
+      <div class="container-shell">
+        <div class="section-heading" data-reveal>
+          <h2>{t.education.title}</h2>
+          <p>{t.education.body}</p>
+        </div>
+        <div class="education-grid">
+          {education.map((item, index) => (
+            <article class:list={['education-item', `education-${index + 1}`]} data-reveal>
+              <span class="education-period">{item.period[locale]}</span>
+              <h3>{item.title[locale]}</h3>
+              <p>{item.center}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section id="cv" class="section cv-section">
+      <div class="container-shell cv-panel glass" data-reveal>
+        <div class="cv-copy">
+          <h2>{t.cv.title}</h2>
+          <p>{t.cv.body}</p>
+        </div>
+        <div class="cv-actions">
+          {profile.cv.esAvailable ? (
+            <a class="button button-primary" href={profile.cv.esPath} download>
+              <Icon name="tabler:file-type-pdf" class="icon-inline" aria-hidden="true" />
+              {t.cv.spanish}
+              <span class="file-meta">ES · PDF</span>
+            </a>
+          ) : (
+            <button class="button button-secondary" type="button" disabled>
+              <Icon name="tabler:file-type-pdf" class="icon-inline" aria-hidden="true" />
+              {t.cv.spanish}
+              <span class="file-meta">{t.cv.soon}</span>
+            </button>
+          )}
+          {profile.cv.enAvailable ? (
+            <a class="button button-secondary" href={profile.cv.enPath} download>
+              <Icon name="tabler:file-type-pdf" class="icon-inline" aria-hidden="true" />
+              {t.cv.english}
+              <span class="file-meta">EN · PDF</span>
+            </a>
+          ) : (
+            <button class="button button-secondary" type="button" disabled>
+              <Icon name="tabler:file-type-pdf" class="icon-inline" aria-hidden="true" />
+              {t.cv.english}
+              <span class="file-meta">{t.cv.soon}</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section contact-section">
+      <div class="container-shell contact-grid">
+        <div class="contact-copy" data-reveal>
+          <h2>{t.contact.title}</h2>
+          <p>{t.contact.body}</p>
+        </div>
+        <div class="contact-actions card-surface" data-reveal>
+          <a class="email-link" href={`mailto:${profile.email}`}>
+            <span>{profile.email}</span>
+            <Icon name="tabler:arrow-up-right" aria-hidden="true" />
+          </a>
+          <div class="contact-meta">
+            <span><Icon name="tabler:map-pin" aria-hidden="true" />{t.contact.location}</span>
+            <span><Icon name="tabler:briefcase" aria-hidden="true" />{profile.availability[locale]}</span>
+          </div>
+          <button
+            class="button button-secondary copy-button"
+            type="button"
+            data-copy-email
+            data-email={profile.email}
+            data-success={t.contact.copied}
+            data-error={t.contact.copyError}
+          >
+            <Icon name="tabler:copy" class="icon-inline" aria-hidden="true" />
+            {t.contact.copy}
+          </button>
+          <p class="copy-feedback" aria-live="polite" data-copy-feedback></p>
+          <div class="contact-socials">
+            <a href={profile.githubUrl} target="_blank" rel="noreferrer">
+              <Icon name="simple-icons:github" aria-hidden="true" />
+              GitHub
+            </a>
+            {profile.linkedinUrl ? (
+              <a href={profile.linkedinUrl} target="_blank" rel="noreferrer">
+                <Icon name="simple-icons:linkedin" aria-hidden="true" />
+                LinkedIn
+              </a>
+            ) : (
+              <span aria-disabled="true"><Icon name="simple-icons:linkedin" aria-hidden="true" />LinkedIn TODO</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer locale={locale} esPath={esPath} enPath={enPath} />
+</div>
+
+<style>
+  .about-section {
+    padding-top: calc(var(--section-space) * 0.85);
+  }
+
+  .about-grid {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .about-area {
+    display: grid;
+    min-height: 13rem;
+    align-content: space-between;
+    gap: 2.5rem;
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .area-1 {
+    background:
+      radial-gradient(circle at 85% 15%, rgba(99, 216, 232, 0.13), transparent 14rem),
+      linear-gradient(145deg, rgba(16, 27, 38, 0.96), rgba(8, 14, 21, 0.94));
+  }
+
+  .area-3 {
+    background:
+      linear-gradient(135deg, rgba(40, 77, 106, 0.18), transparent 52%),
+      rgba(12, 20, 29, 0.92);
+  }
+
+  .area-icon {
+    width: 1.65rem;
+    height: 1.65rem;
+    color: var(--accent-strong);
+  }
+
+  .about-area h3 {
+    margin: 0;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+    letter-spacing: -0.035em;
+  }
+
+  .about-area p {
+    max-width: 42ch;
+    margin: 0.55rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .profile-facts {
+    display: grid;
+    gap: 1rem;
+    border-radius: var(--radius-card);
+    padding: 1.25rem;
+  }
+
+  .profile-facts > div {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+  }
+
+  .profile-facts :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: none;
+    margin-top: 0.18rem;
+    color: var(--accent-strong);
+  }
+
+  .projects-section {
+    background: linear-gradient(180deg, transparent, rgba(20, 35, 48, 0.28) 45%, transparent);
+  }
+
+  .projects-grid {
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .projects-grid > :global(article:first-child) {
+    grid-column: 1 / -1;
+  }
+
+  .experience-section .section-heading {
+    margin-left: clamp(0rem, 8vw, 6rem);
+  }
+
+  .technology-section {
+    background:
+      radial-gradient(circle at 8% 48%, rgba(41, 103, 129, 0.11), transparent 28rem),
+      rgba(6, 11, 16, 0.72);
+  }
+
+  .education-grid {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .education-item {
+    min-height: 12rem;
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: rgba(255, 255, 255, 0.025);
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+  }
+
+  .education-item:nth-child(2) {
+    background: linear-gradient(135deg, rgba(99, 216, 232, 0.09), rgba(255, 255, 255, 0.02));
+  }
+
+  .education-period {
+    color: var(--accent-strong);
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+  }
+
+  .education-item h3 {
+    max-width: 22ch;
+    margin: 2.25rem 0 0;
+    font-size: clamp(1.2rem, 2.6vw, 1.65rem);
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+  }
+
+  .education-item p {
+    margin: 0.55rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .cv-section {
+    padding-block: calc(var(--section-space) * 0.72);
+  }
+
+  .cv-panel {
+    display: grid;
+    align-items: center;
+    gap: 2rem;
+    border-radius: var(--radius-card);
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  .cv-panel h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    letter-spacing: -0.045em;
+  }
+
+  .cv-panel p {
+    max-width: 52ch;
+    margin: 0.6rem 0 0;
+    color: var(--text-muted);
+  }
+
+  .cv-actions {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .cv-actions .button {
+    justify-content: flex-start;
+  }
+
+  .file-meta {
+    margin-left: auto;
+    color: inherit;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.65rem;
+    opacity: 0.72;
+  }
+
+  .contact-section {
+    padding-top: calc(var(--section-space) * 0.85);
+  }
+
+  .contact-grid {
+    display: grid;
+    align-items: center;
+    gap: clamp(2rem, 7vw, 6rem);
+  }
+
+  .contact-copy h2 {
+    max-width: 13ch;
+    margin: 0;
+    font-size: clamp(2.5rem, 7vw, 5.7rem);
+    font-weight: 660;
+    letter-spacing: -0.065em;
+    line-height: 0.95;
+  }
+
+  .contact-copy p {
+    margin: 1.2rem 0 0;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+  }
+
+  .contact-actions {
+    padding: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .email-link {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.9rem;
+    color: var(--accent-strong);
+    font-size: clamp(0.9rem, 2.2vw, 1.2rem);
+    font-weight: 720;
+  }
+
+  .email-link :global(svg) {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .contact-meta {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 1rem;
+  }
+
+  .contact-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  .contact-meta :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    color: var(--accent-strong);
+  }
+
+  .copy-button {
+    width: 100%;
+    margin-top: 1.25rem;
+  }
+
+  .copy-feedback {
+    min-height: 1.5rem;
+    margin: 0.5rem 0 0;
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+  }
+
+  .contact-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+  }
+
+  .contact-socials a,
+  .contact-socials span {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+
+  .contact-socials span {
+    opacity: 0.45;
+  }
+
+  .contact-socials :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  @media (min-width: 720px) {
+    .about-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .about-area {
+      grid-column: span 3;
+    }
+
+    .area-1 {
+      grid-column: span 4;
+    }
+
+    .area-2 {
+      grid-column: span 2;
+    }
+
+    .area-3 {
+      grid-column: span 3;
+    }
+
+    .profile-facts {
+      grid-column: span 3;
+    }
+
+    .projects-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .education-grid {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .education-item {
+      grid-column: span 3;
+    }
+
+    .education-1,
+    .education-4 {
+      grid-column: span 4;
+    }
+
+    .education-2,
+    .education-3 {
+      grid-column: span 2;
+    }
+
+    .cv-panel {
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.52fr);
+    }
+
+    .contact-grid {
+      grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.7fr);
+    }
+  }
+
+  @media (max-width: 719px) {
+    .about-grid,
+    .projects-grid,
+    .education-grid,
+    .cv-panel,
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-copy h2 {
+      max-width: 11ch;
+    }
+  }
+</style>
