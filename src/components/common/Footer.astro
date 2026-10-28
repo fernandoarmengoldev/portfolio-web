@@ -13,26 +13,21 @@ interface Props {
 
 const { locale, esPath, enPath } = Astro.props;
 const t = getTranslations(locale);
+const year = new Date().getFullYear();
 ---
 
-<footer>
-  <div class="container-shell footer-grid">
-    <div>
-      <p class="footer-name">{profile.name}</p>
-      <p class="footer-built">{t.footer.built}</p>
-    </div>
+<footer class="footer">
+  <div class="shell footer-inner">
+    <p class="credit">
+      <span>© {year} {profile.name}</span>
+      <span class="built">{t.footer.built}</span>
+    </p>
     <nav aria-label={locale === 'es' ? 'Enlaces del pie de página' : 'Footer links'}>
-      <a href={profile.githubUrl} target="_blank" rel="noreferrer">
-        <Icon name="simple-icons:github" class="icon-inline" aria-hidden="true" />
-        GitHub
-      </a>
-      <a href={`mailto:${profile.email}`}>
-        <Icon name="tabler:mail" class="icon-inline" aria-hidden="true" />
-        {locale === 'es' ? 'Correo' : 'Email'}
-      </a>
+      <a href={profile.githubUrl} target="_blank" rel="noreferrer">GitHub</a>
+      <a href={`mailto:${profile.email}`}>{locale === 'es' ? 'Correo' : 'Email'}</a>
       <a href="#top">
-        <Icon name="tabler:arrow-up" class="icon-inline" aria-hidden="true" />
         {t.footer.top}
+        <Icon name="tabler:arrow-up" class="icon" aria-hidden="true" />
       </a>
     </nav>
     <LanguageSwitcher locale={locale} esPath={esPath} enPath={enPath} label={t.languageLabel} />
@@ -40,54 +35,55 @@ const t = getTranslations(locale);
 </footer>
 
 <style>
-  footer {
-    padding: 2.5rem 0 1.5rem;
+  .footer {
+    position: relative;
+    background: rgba(4, 22, 30, 0.6);
   }
 
-  .footer-grid {
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2.5rem;
+    border-top: 1px solid var(--rule);
+    padding-block: 1.5rem;
+    color: var(--tide);
+    font-size: var(--step--1);
+  }
+
+  .credit {
     display: grid;
-    align-items: start;
-    gap: 1.5rem;
+    margin-right: auto;
   }
 
-  p {
-    margin: 0;
-  }
-
-  .footer-name {
-    color: var(--text);
-    font-weight: 720;
-  }
-
-  .footer-built {
-    margin-top: 0.25rem;
-    color: var(--text-faint);
-    font-size: 0.82rem;
+  .credit span:first-child {
+    color: var(--spray);
   }
 
   nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.1rem;
+    gap: 0.25rem 1.5rem;
   }
 
   nav a {
     display: inline-flex;
     min-height: 2.75rem;
     align-items: center;
-    gap: 0.45rem;
-    color: var(--text-muted);
-    font-size: 0.82rem;
-    font-weight: 650;
+    gap: 0.35rem;
+    transition: color 160ms ease;
   }
 
   nav a:hover {
-    color: var(--accent-strong);
+    color: var(--spray);
   }
 
-  @media (min-width: 800px) {
-    .footer-grid {
-      grid-template-columns: 1fr auto auto;
-    }
+  nav :global(.icon) {
+    transition: transform 260ms var(--ease-out);
+  }
+
+  nav a:hover :global(.icon) {
+    transform: translateY(-3px);
   }
 </style>

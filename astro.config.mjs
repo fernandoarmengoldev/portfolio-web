@@ -14,8 +14,13 @@ export default defineConfig({
     locales: ['es', 'en'],
     defaultLocale: 'es',
     routing: {
-      prefixDefaultLocale: true,
+      prefixDefaultLocale: false,
     },
+  },
+  // Spanish now lives at the root; keep old /es/ links working.
+  redirects: {
+    '/es': '/',
+    '/es/proyectos/[slug]': '/proyectos/[slug]',
   },
   vite: {
     plugins: [tailwindcss()],

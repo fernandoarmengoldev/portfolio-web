@@ -44,7 +44,7 @@ src/
   data/                    Perfil, experiencia, formación y tecnologías
   i18n/translations.ts     Textos visibles en español e inglés
   layouts/                 SEO, metadatos y estructura base
-  pages/es/                Rutas en español
+  pages/                   Rutas en español (raíz del sitio)
   pages/en/                Rutas en inglés
   styles/global.css        Tokens y estilos globales
 public/
@@ -55,7 +55,7 @@ public/
 
 1. Duplica una entrada de `src/content/projects/` para cada idioma.
 2. Mantén la misma `translationKey` en ambas versiones.
-3. Usa un `slug` español para `/es/proyectos/` y otro inglés para `/en/projects/`.
+3. Usa un `slug` español para `/proyectos/` y otro inglés para `/en/projects/`.
 4. Completa todos los campos TODO con información verificable.
 5. Guarda la imagen en `src/assets/images/projects/` y referencia su ruta relativa desde el Markdown.
 6. Añade URL de GitHub o demo solo si existen. Los enlaces son opcionales.

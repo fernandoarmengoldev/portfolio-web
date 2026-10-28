@@ -13,40 +13,37 @@ const { locale, esPath, enPath, label } = Astro.props;
 
 <nav class="language-switcher" aria-label={label}>
   <a href={esPath} lang="es" hreflang="es" aria-current={locale === 'es' ? 'page' : undefined} aria-label="Español">ES</a>
+  <span aria-hidden="true">/</span>
   <a href={enPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'page' : undefined} aria-label="English">EN</a>
 </nav>
 
 <style>
   .language-switcher {
-    display: inline-flex;
-    min-height: 2.5rem;
+    display: flex;
     align-items: center;
-    gap: 0.18rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.04);
-    padding: 0.2rem;
+    gap: 0.15rem;
+    color: var(--tide);
+    font-size: 0.85rem;
+    font-weight: 600;
   }
 
   a {
     display: inline-grid;
     min-width: 2rem;
-    min-height: 2rem;
+    min-height: 2.75rem;
     place-items: center;
-    border-radius: var(--radius-pill);
-    color: var(--text-muted);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 0.7rem;
-    font-weight: 750;
-    transition: color 180ms ease, background-color 180ms ease;
+    transition: color 160ms ease;
   }
 
   a:hover {
-    color: var(--text);
+    color: var(--spray);
   }
 
-  a[aria-current="page"] {
-    background: rgba(99, 216, 232, 0.14);
-    color: var(--accent-strong);
+  a[aria-current='page'] {
+    color: var(--caustic);
+  }
+
+  span {
+    opacity: 0.5;
   }
 </style>

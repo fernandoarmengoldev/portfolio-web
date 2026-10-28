@@ -1,4 +1,5 @@
 ---
+import '@fontsource-variable/mona-sans/wdth.css';
 import '../styles/global.css';
 import { profile, type Locale } from '../data/profile';
 import { getTranslations } from '../i18n/translations';
@@ -48,7 +49,7 @@ const safeJsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta name="theme-color" content="#070b10" />
+    <meta name="theme-color" content="#04161e" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -71,7 +72,9 @@ const safeJsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
     <meta name="twitter:image" content={socialImage} />
     <script is:inline type="application/ld+json" set:html={safeJsonLd}></script>
     <script is:inline>
-      document.documentElement.classList.add('reveal-ready');
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+        document.documentElement.classList.add('js-motion');
+      }
     </script>
   </head>
   <body>
@@ -81,24 +84,48 @@ const safeJsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
       <slot />
     </div>
     <script>
-      const revealElements = document.querySelectorAll('[data-reveal]');
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      import Lenis from 'lenis';
+      import 'lenis/dist/lenis.css';
 
-      if (reduceMotion || !('IntersectionObserver' in window)) {
-        revealElements.forEach((element) => element.classList.add('is-visible'));
-      } else {
+      // Eased mouse-wheel scrolling on desktop. Touch keeps native scrolling, and
+      // reduced-motion visitors skip it entirely (Lenis would still ease the wheel).
+      const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (finePointer && !reducedMotion) {
+        new Lenis({ autoRaf: true, anchors: true, lerp: 0.085 });
+      }
+
+      const header = document.querySelector<HTMLElement>('[data-site-header]');
+      if (header) {
+        // Solid once scrolled; tucks away while scrolling down, returns on scroll up.
+        let lastY = window.scrollY;
+        const updateHeader = () => {
+          const y = window.scrollY;
+          const menuOpen = header.querySelector('details[open]');
+          header.toggleAttribute('data-scrolled', y > 24);
+          header.toggleAttribute('data-hidden', !menuOpen && y > lastY && y > 320);
+          lastY = y;
+        };
+        updateHeader();
+        window.addEventListener('scroll', updateHeader, { passive: true });
+        header.addEventListener('focusin', () => header.removeAttribute('data-hidden'));
+      }
+
+      if (document.documentElement.classList.contains('js-motion')) {
+        document.querySelectorAll<HTMLElement>('[data-reveal-stagger]').forEach((group) => {
+          Array.from(group.children).forEach((child, index) => (child as HTMLElement).style.setProperty('--i', String(index)));
+        });
         const revealObserver = new IntersectionObserver(
           (entries, observer) => {
             entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-                observer.unobserve(entry.target);
-              }
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add('is-visible');
+              observer.unobserve(entry.target);
             });
           },
-          { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
+          { rootMargin: '0px 0px -8% 0px' },
         );
-        revealElements.forEach((element) => revealObserver.observe(element));
+        document.querySelectorAll('[data-reveal], [data-reveal-stagger]').forEach((element) => revealObserver.observe(element));
       }
 
       const sectionLinks = document.querySelectorAll('[data-section-link]');
@@ -116,7 +143,7 @@ const safeJsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
               else link.removeAttribute('aria-current');
             });
           },
-          { rootMargin: '-22% 0px -68% 0px', threshold: [0, 0.2, 0.7] },
+          { rootMargin: '-30% 0px -60% 0px', threshold: [0, 0.2, 0.7] },
         );
         sections.forEach((section) => navObserver.observe(section));
       }
@@ -125,16 +152,25 @@ const safeJsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
         link.addEventListener('click', () => link.closest('details')?.removeAttribute('open'));
       });
 
-      document.querySelectorAll('[data-copy-email]').forEach((button) => {
+      document.querySelectorAll<HTMLButtonElement>('[data-copy-email]').forEach((button) => {
+        const label = button.querySelector('[data-copy-label]');
+        const idleText = label?.textContent ?? '';
+        let resetTimer = 0;
         button.addEventListener('click', async () => {
-          const value = button.getAttribute('data-email') ?? '';
           const feedback = document.querySelector('[data-copy-feedback]');
+          window.clearTimeout(resetTimer);
           try {
-            await navigator.clipboard.writeText(value);
-            if (feedback) feedback.textContent = button.getAttribute('data-success') ?? '';
+            await navigator.clipboard.writeText(button.dataset.email ?? '');
+            if (label) label.textContent = button.dataset.success ?? '';
+            if (feedback) feedback.textContent = button.dataset.success ?? '';
+            button.dataset.state = 'copied';
           } catch {
-            if (feedback) feedback.textContent = button.getAttribute('data-error') ?? '';
+            if (feedback) feedback.textContent = button.dataset.error ?? '';
           }
+          resetTimer = window.setTimeout(() => {
+            if (label) label.textContent = idleText;
+            delete button.dataset.state;
+          }, 2400);
         });
       });
     </script>

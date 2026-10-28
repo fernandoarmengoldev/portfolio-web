@@ -1,5 +1,4 @@
 ---
-import { Icon } from 'astro-icon/components';
 import type { Locale } from '../../data/profile';
 import { experience } from '../../data/experience';
 
@@ -8,30 +7,25 @@ interface Props {
 }
 
 const { locale } = Astro.props;
+const yearSpan = (period: string) => [...new Set(period.match(/\d{4}/g) ?? [])].join('–');
 ---
 
 <ol class="timeline">
   {experience.map((item) => (
-    <li class="timeline-item" data-reveal>
-      <div class="timeline-marker" aria-hidden="true">
-        <Icon name="tabler:code" />
-      </div>
+    <li class="entry" data-reveal>
+      <p class="years" aria-hidden="true">{yearSpan(item.period.en)}</p>
       <article>
-        <header>
-          <div>
-            <h3>{item.role[locale]}</h3>
-            <p class="company">{item.company}</p>
-          </div>
-          <div class="meta">
-            <span>{item.period[locale]}</span>
-            <span>{item.location[locale]}</span>
-          </div>
-        </header>
-        <ul class="responsibilities">
+        <h3>{item.role[locale]}</h3>
+        <p class="company">{item.company}</p>
+        <p class="meta">
+          <time>{item.period[locale]}</time>
+          <span>{item.location[locale]}</span>
+        </p>
+        <ul class="duties">
           {item.responsibilities[locale].map((responsibility) => <li>{responsibility}</li>)}
         </ul>
-        <ul class="technology-list" aria-label={locale === 'es' ? 'Tecnologías relacionadas' : 'Related technologies'}>
-          {item.technologies.map((technology) => <li class="tag">{technology}</li>)}
+        <ul class="stack-list" aria-label={locale === 'es' ? 'Tecnologías utilizadas' : 'Technologies used'}>
+          {item.technologies.map((technology) => <li>{technology}</li>)}
         </ul>
       </article>
     </li>
@@ -41,132 +35,125 @@ const { locale } = Astro.props;
 <style>
   .timeline {
     position: relative;
-    max-width: 68rem;
-    margin: 0;
+    display: grid;
     padding: 0;
     list-style: none;
   }
 
-  .timeline::before {
+  .entry {
+    position: relative;
+    display: grid;
+    gap: 0.5rem;
+    padding: 0 0 3.5rem 1.75rem;
+  }
+
+  .entry:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Depth line; draws downwards when the entry is revealed */
+  .entry::after {
     position: absolute;
-    top: 1.5rem;
-    bottom: 1.5rem;
-    left: 1.35rem;
+    top: 0.6rem;
+    bottom: -0.6rem;
+    left: 0;
     width: 1px;
-    background: linear-gradient(var(--accent), var(--border) 72%, transparent);
-    content: "";
+    background: var(--rule);
+    content: '';
+    transform-origin: top;
+    transition: transform 1200ms var(--ease-out) 250ms;
   }
 
-  .timeline-item {
-    position: relative;
-    display: grid;
-    grid-template-columns: 2.75rem minmax(0, 1fr);
-    gap: 1rem;
+  .entry:last-child::after {
+    display: none;
   }
 
-  .timeline-item + .timeline-item {
-    margin-top: 1.25rem;
+  :global(html.js-motion) .entry:not(.is-visible)::after {
+    transform: scaleY(0);
   }
 
-  .timeline-marker {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
-    place-items: center;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-small);
-    background: var(--bg);
-    color: var(--accent-strong);
+  :global(html.js-motion) .entry:not(.is-visible)::before {
+    transform: scale(0);
   }
 
-  .timeline-marker :global(svg) {
-    width: 1rem;
-    height: 1rem;
+  /* Sounding marker on the depth line */
+  .entry::before {
+    position: absolute;
+    top: 0.55rem;
+    z-index: 1;
+    left: -0.27rem;
+    width: 0.55rem;
+    height: 0.55rem;
+    border: 1px solid var(--caustic);
+    border-radius: 50%;
+    background: var(--abyss);
+    content: '';
+    transition: transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 150ms;
   }
 
-  article {
-    border-top: 1px solid var(--border);
-    padding: 0.15rem 0 2.25rem;
+  .entry:first-child::before {
+    background: var(--caustic);
+    box-shadow: 0 0 0 0.3rem rgba(139, 234, 240, 0.14);
   }
 
-  header {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  h3,
-  p {
-    margin: 0;
+  .years {
+    color: var(--caustic);
+    font-size: var(--step-1);
+    font-stretch: 118%;
+    font-weight: 650;
+    line-height: 1.2;
   }
 
   h3 {
-    font-size: clamp(1.25rem, 3vw, 1.75rem);
-    letter-spacing: -0.035em;
+    font-size: var(--step-2);
+    font-stretch: 108%;
+    font-weight: 680;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
   }
 
   .company {
-    margin-top: 0.15rem;
-    color: var(--accent-strong);
-    font-weight: 700;
+    margin-top: 0.3rem;
+    font-size: var(--step-0);
+    font-weight: 550;
   }
 
   .meta {
-    display: grid;
-    color: var(--text-faint);
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 0.72rem;
-  }
-
-  .responsibilities {
-    display: grid;
-    max-width: 62ch;
-    gap: 0.5rem;
-    margin: 1.1rem 0 0;
-    padding-left: 1.1rem;
-    color: var(--text-muted);
-  }
-
-  .responsibilities li::marker {
-    color: var(--accent);
-  }
-
-  .technology-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 1.15rem 0 0;
-    padding: 0;
-    list-style: none;
+    gap: 0.15rem 1.25rem;
+    margin-top: 0.2rem;
+    color: var(--tide);
+    font-size: var(--step--1);
   }
 
-  @media (min-width: 720px) {
-    .timeline-item {
-      grid-template-columns: 3.5rem minmax(0, 1fr);
-      gap: 1.5rem;
+  .duties {
+    display: grid;
+    gap: 0.5rem;
+    max-width: 62ch;
+    margin-top: 1.25rem;
+    padding-left: 1.1rem;
+    color: var(--spray);
+    list-style: disc;
+  }
+
+  .duties li::marker {
+    color: var(--tide);
+  }
+
+  .stack-list {
+    margin-top: 1.25rem;
+  }
+
+  @media (min-width: 700px) {
+    .entry {
+      grid-template-columns: 8.5rem minmax(0, 1fr);
+      gap: 2rem;
+      padding-left: 2.25rem;
     }
 
-    .timeline::before {
-      left: 1.7rem;
-    }
-
-    .timeline-marker {
-      width: 3.5rem;
-      height: 3.5rem;
-    }
-
-    article {
-      padding-top: 0.35rem;
-    }
-
-    header {
-      grid-template-columns: minmax(0, 1fr) auto;
-    }
-
-    .meta {
-      justify-items: end;
-      text-align: right;
+    .years {
+      padding-top: 0.2rem;
     }
   }
 </style>

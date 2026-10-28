@@ -1,8 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import ProjectPage from '../../../components/ProjectPage.astro';
-import { getProjectPageData, getProjectPath, getProjectStaticPaths } from '../../../utils/projects';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectPage from '../../components/ProjectPage.astro';
+import { getProjectPageData, getProjectPath, getProjectStaticPaths } from '../../utils/projects';
 
 export async function getStaticPaths() {
   return getProjectStaticPaths('es');

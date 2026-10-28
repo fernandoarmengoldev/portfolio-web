@@ -19,7 +19,6 @@ const t = getTranslations(locale);
 const homePath = getRelativeLocaleUrl(locale, '');
 const anchorPath = (id: string) => `${isHome ? '' : homePath}#${id}`;
 const navItems = [
-  ['home', t.nav.home],
   ['experience', t.nav.experience],
   ['projects', t.nav.projects],
   ['technologies', t.nav.technologies],
@@ -27,54 +26,51 @@ const navItems = [
   ['contact', t.nav.contact],
 ] as const;
 const visibleNavItems = navItems.filter(([id]) => siteFeatures.projects || id !== 'projects');
-const cvHref = profile.cv[locale === 'es' ? 'esAvailable' : 'enAvailable']
-  ? profile.cv[locale === 'es' ? 'esPath' : 'enPath']
-  : anchorPath('cv');
+const cvAvailable = profile.cv[locale === 'es' ? 'esAvailable' : 'enAvailable'];
+const cvHref = cvAvailable ? profile.cv[locale === 'es' ? 'esPath' : 'enPath'] : anchorPath('cv');
 ---
 
-<header class="site-header">
-  <div class="header-inner">
-    <div class="nav-shell glass">
-      <a class="brand" href={homePath} aria-label={`${profile.name}, ${t.nav.home}`}>
-        <span aria-hidden="true">Fernando D. Armengol</span>
+<header class="site-header" data-site-header>
+  <div class="shell bar">
+    <a class="brand" href={homePath} aria-label={`${profile.name}, ${t.nav.home}`}>
+      <span aria-hidden="true">Fernando D. Armengol</span>
+    </a>
+
+    <nav class="nav-desktop" aria-label={t.navLabel}>
+      {visibleNavItems.map(([id, label]) => (
+        <a href={anchorPath(id)} data-section-link={isHome ? '' : undefined}>{label}</a>
+      ))}
+    </nav>
+
+    <div class="actions-desktop">
+      <LanguageSwitcher locale={locale} esPath={esPath} enPath={enPath} label={t.languageLabel} />
+      <a class="btn" href={cvHref} download={cvAvailable ? '' : undefined}>
+        <Icon name="tabler:download" class="icon" aria-hidden="true" />
+        {t.nav.cv}
       </a>
-
-      <nav class="desktop-nav" aria-label={t.navLabel}>
-        {visibleNavItems.map(([id, label]) => (
-          <a href={anchorPath(id)} data-section-link={isHome ? '' : undefined} aria-current={id === 'home' && isHome ? 'location' : undefined}>{label}</a>
-        ))}
-      </nav>
-
-      <div class="desktop-actions">
-        <LanguageSwitcher locale={locale} esPath={esPath} enPath={enPath} label={t.languageLabel} />
-        <a class="button button-primary cv-button" href={cvHref} download={profile.cv[locale === 'es' ? 'esAvailable' : 'enAvailable'] ? '' : undefined}>
-          <Icon name="tabler:file-download" class="icon-inline" aria-hidden="true" />
-          {t.nav.cv}
-        </a>
-      </div>
-
-      <details class="mobile-menu">
-        <summary>
-          <span class="menu-label menu-open">{t.menuOpen}</span>
-          <span class="menu-label menu-close">{t.menuClose}</span>
-          <Icon name="tabler:menu-2" class="menu-icon" aria-hidden="true" />
-        </summary>
-        <div class="mobile-panel glass">
-          <nav aria-label={t.navLabel}>
-            {visibleNavItems.map(([id, label]) => (
-              <a href={anchorPath(id)} data-menu-link>{label}</a>
-            ))}
-          </nav>
-          <div class="mobile-actions">
-            <LanguageSwitcher locale={locale} esPath={esPath} enPath={enPath} label={t.languageLabel} />
-            <a class="button button-primary" href={cvHref} data-menu-link>
-              <Icon name="tabler:file-download" class="icon-inline" aria-hidden="true" />
-              {t.nav.cv}
-            </a>
-          </div>
-        </div>
-      </details>
     </div>
+
+    <details class="menu">
+      <summary>
+        <span class="sr-only menu-open">{t.menuOpen}</span>
+        <span class="sr-only menu-close">{t.menuClose}</span>
+        <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+      </summary>
+      <div class="menu-panel">
+        <nav aria-label={t.navLabel}>
+          {visibleNavItems.map(([id, label], index) => (
+            <a href={anchorPath(id)} data-menu-link style={`--i: ${index}`}>{label}</a>
+          ))}
+        </nav>
+        <div class="menu-actions" style={`--i: ${visibleNavItems.length}`}>
+          <LanguageSwitcher locale={locale} esPath={esPath} enPath={enPath} label={t.languageLabel} />
+          <a class="btn btn-solid" href={cvHref} download={cvAvailable ? '' : undefined} data-menu-link>
+            <Icon name="tabler:download" class="icon" aria-hidden="true" />
+            {t.nav.cv}
+          </a>
+        </div>
+      </div>
+    </details>
   </div>
 </header>
 
@@ -83,219 +79,284 @@ const cvHref = profile.cv[locale === 'es' ? 'esAvailable' : 'enAvailable']
     position: fixed;
     z-index: 50;
     top: 0;
+    right: 0;
     left: 0;
-    width: 100%;
-    padding: 0.75rem;
-    pointer-events: none;
+    border-bottom: 1px solid transparent;
+    transition: background-color 240ms ease, border-color 240ms ease, transform 360ms var(--ease-out);
   }
 
-  .header-inner {
-    display: flex;
-    width: min(100%, 88rem);
-    align-items: center;
-    gap: 1rem;
-    margin-inline: auto;
+  .site-header[data-hidden] {
+    transform: translateY(-100%);
   }
 
-  .nav-shell {
+  .site-header[data-scrolled] {
+    border-bottom-color: var(--rule);
+    background: rgba(4, 22, 30, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .bar {
     display: flex;
-    width: 100%;
-    min-width: 0;
-    min-height: var(--nav-height);
-    flex: 1;
+    height: var(--nav-height);
     align-items: center;
-    gap: 1rem;
-    border-radius: var(--radius-card);
-    padding: 0.55rem 0.65rem;
-    pointer-events: auto;
+    justify-content: space-between;
+    gap: 2rem;
   }
 
   .brand {
-    display: flex;
-    flex: none;
-    align-items: center;
-    color: var(--text);
-    font-size: clamp(0.82rem, 1.35vw, 0.96rem);
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    padding-left: 0.45rem;
+    font-size: 0.95rem;
+    font-stretch: 125%;
+    font-weight: 750;
+    letter-spacing: -0.01em;
     white-space: nowrap;
-    pointer-events: auto;
   }
 
-  .desktop-nav,
-  .desktop-actions {
+  .nav-desktop {
     display: none;
+    gap: 2rem;
+    margin-right: auto;
+    margin-left: 1rem;
   }
 
-  .mobile-menu {
-    margin-left: auto;
+  .nav-desktop a {
+    position: relative;
+    padding-block: 0.4rem;
+    color: var(--tide);
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: color 160ms ease;
   }
 
-  summary {
+  .nav-desktop a:hover,
+  .nav-desktop a[aria-current] {
+    color: var(--spray);
+  }
+
+  .nav-desktop a::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: var(--caustic);
+    content: '';
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 240ms var(--ease-out);
+  }
+
+  .nav-desktop a[aria-current]::after {
+    transform: scaleX(1);
+  }
+
+  .actions-desktop {
+    display: none;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .menu summary {
     display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.875rem;
+    height: 2.875rem;
+    place-items: center;
+    border: 1px solid var(--rule-strong);
     cursor: pointer;
     list-style: none;
-    place-items: center;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    background: rgba(255, 255, 255, 0.05);
   }
 
-  summary::-webkit-details-marker {
+  .menu summary::-webkit-details-marker {
     display: none;
   }
 
-  .menu-icon {
+  /* Three bars that fold into a cross */
+  .burger {
+    position: relative;
     width: 1.25rem;
-    height: 1.25rem;
+    height: 0.875rem;
   }
 
-  .menu-label {
+  .burger span {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform 360ms var(--ease-out), opacity 200ms ease;
+  }
+
+  .burger span:nth-child(1) {
+    top: 0;
+  }
+
+  .burger span:nth-child(2) {
+    top: calc(50% - 1px);
+  }
+
+  .burger span:nth-child(3) {
+    bottom: 0;
+    width: 70%;
+  }
+
+  .menu[open]:not(.is-closing) .burger span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .menu[open]:not(.is-closing) .burger span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  .menu[open]:not(.is-closing) .burger span:nth-child(3) {
+    width: 100%;
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .menu summary {
+    transition: border-color 160ms ease, background-color 160ms ease;
+  }
+
+  .menu[open] summary {
+    border-color: var(--caustic);
+    background: rgba(139, 234, 240, 0.08);
+  }
+
+  .menu .menu-close,
+  .menu[open] .menu-open {
+    display: none;
+  }
+
+  .menu[open] .menu-close {
+    display: block;
+  }
+
+  .menu-panel {
+    position: absolute;
+    top: var(--nav-height);
+    right: 0;
+    left: 0;
+    display: grid;
+    gap: 2rem;
+    border-bottom: 1px solid var(--rule);
+    background: var(--abyss);
+    padding: 1.5rem var(--gutter) 2rem;
+    animation: panel-in 420ms var(--ease-out);
+  }
+
+  .menu-panel nav a,
+  .menu-actions {
+    animation: item-in 480ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 55ms + 90ms);
+  }
+
+  .menu.is-closing .menu-panel {
+    animation: panel-out 240ms ease-in forwards;
+  }
+
+  @keyframes panel-in {
+    from {
+      clip-path: inset(0 0 100% 0);
+      opacity: 0.4;
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  @keyframes panel-out {
+    to {
+      clip-path: inset(0 0 100% 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes item-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.6rem);
+    }
+  }
+
+  .menu-panel nav {
+    display: grid;
+  }
+
+  .menu-panel nav a {
+    border-bottom: 1px solid var(--rule);
+    padding-block: 0.85rem;
+    font-size: var(--step-2);
+    font-stretch: 112%;
+    font-weight: 650;
+    transition: color 160ms ease, padding-left 260ms var(--ease-out);
+  }
+
+  .menu-panel nav a:hover {
+    padding-left: 0.5rem;
+    color: var(--caustic);
+  }
+
+  .menu-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .sr-only {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
-  .menu-close {
-    display: none;
-  }
-
-  details[open] .menu-open {
-    display: none;
-  }
-
-  details[open] .menu-close {
-    display: block;
-  }
-
-  details[open] .menu-icon {
-    transform: rotate(90deg);
-  }
-
-  .mobile-panel {
-    position: absolute;
-    top: calc(100% + 0.6rem);
-    right: 0;
-    left: 0;
-    border-radius: var(--radius-card);
-    padding: 1rem;
-  }
-
-  .mobile-panel nav {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.35rem;
-  }
-
-  .mobile-panel nav a {
-    display: flex;
-    min-height: 2.8rem;
-    align-items: center;
-    border-radius: var(--radius-small);
-    color: var(--text-muted);
-    padding: 0.5rem 0.65rem;
-    font-weight: 650;
-  }
-
-  .mobile-panel nav a:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-  }
-
-  .mobile-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-top: 1px solid var(--border);
-    margin-top: 0.75rem;
-    padding-top: 0.9rem;
-  }
-
-  @media (min-width: 1180px) {
-    .nav-shell {
-      flex: 1;
-      margin-left: 0;
-    }
-
-    .desktop-nav {
+  @media (min-width: 1000px) {
+    .nav-desktop,
+    .actions-desktop {
       display: flex;
-      min-width: 0;
-      flex: 1;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(0.35rem, 1vw, 0.9rem);
     }
 
-    .desktop-nav a {
-      position: relative;
-      padding: 0.55rem 0.25rem;
-      color: var(--text-muted);
-      font-size: 0.76rem;
-      font-weight: 650;
-      white-space: nowrap;
-      transition: color 180ms ease;
-    }
-
-    .desktop-nav a::after {
-      position: absolute;
-      right: 25%;
-      bottom: 0.18rem;
-      left: 25%;
-      height: 1px;
-      transform: scaleX(0);
-      background: var(--accent);
-      content: "";
-      transition: transform 180ms ease;
-    }
-
-    .desktop-nav a:hover,
-    .desktop-nav a[aria-current="location"] {
-      color: var(--text);
-    }
-
-    .desktop-nav a[aria-current="location"]::after {
-      transform: scaleX(1);
-    }
-
-    .desktop-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .cv-button {
-      min-height: 2.5rem;
-      padding-block: 0.5rem;
-      font-size: 0.76rem;
-    }
-
-    .mobile-menu {
+    .menu {
       display: none;
     }
   }
-
-  @media (max-width: 420px) {
-    .header-inner {
-      gap: 0.65rem;
-    }
-
-    .brand {
-      font-size: 0.78rem;
-    }
-
-    .mobile-panel nav {
-      grid-template-columns: 1fr;
-    }
-
-    .mobile-actions {
-      align-items: stretch;
-      flex-direction: column;
-    }
-  }
 </style>
+
+<script>
+  // Let <details> play a closing animation, and close on Escape or outside tap.
+  const menu = document.querySelector<HTMLDetailsElement>('.menu');
+  const panel = menu?.querySelector<HTMLElement>('.menu-panel');
+
+  const closeMenu = () => {
+    if (!menu?.open || menu.classList.contains('is-closing')) return;
+    menu.classList.add('is-closing');
+    panel?.addEventListener(
+      'animationend',
+      () => {
+        menu.open = false;
+        menu.classList.remove('is-closing');
+      },
+      { once: true },
+    );
+  };
+
+  menu?.querySelector('summary')?.addEventListener('click', (event) => {
+    if (!menu.open) return;
+    event.preventDefault();
+    closeMenu();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !menu?.open) return;
+    closeMenu();
+    menu.querySelector('summary')?.focus();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (menu?.open && !menu.contains(event.target as Node)) closeMenu();
+  });
+</script>

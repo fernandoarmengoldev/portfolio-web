@@ -1,0 +1,43 @@
+---
+import { Icon } from 'astro-icon/components';
+import type { Technology } from '../../data/technologies';
+
+interface Props {
+  technology: Technology;
+}
+
+const { technology } = Astro.props;
+const isTile = technology.icon?.startsWith('skill-icons:');
+---
+
+{isTile ? (
+  <Icon name={technology.icon!} class="tech-icon" aria-hidden="true" />
+) : (
+  <span class="tech-icon tile" aria-hidden="true" style={technology.tint ? `color: ${technology.tint}` : undefined}>
+    {technology.icon ? <Icon name={technology.icon} class="glyph" /> : <span class="monogram">{technology.monogram}</span>}
+  </span>
+)}
+
+<style>
+  /* Matches the skill-icons tile: #242938 rounded square, glyph centred */
+  .tile {
+    display: inline-grid;
+    place-items: center;
+    border-radius: 22%;
+    background: #242938;
+    color: var(--spray);
+  }
+
+  .tile :global(.glyph) {
+    width: 62%;
+    height: 62%;
+  }
+
+  .monogram {
+    font-size: 0.68em;
+    font-stretch: 112%;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+</style>
